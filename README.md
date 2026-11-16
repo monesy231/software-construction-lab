@@ -1,4 +1,4 @@
-# AircraftWar2026
+# 软件构造实验
 
 《软件构造实践》实验一、实验二，单人项目。
 
@@ -34,4 +34,4 @@ AI日志记录所列模拟器场景与JVM检查结果。实验三至实验七继
 
 保留四个迁移阶段提交：空壳工程、资源与模型、SurfaceView渲染、触屏与完整逻辑。文档修订单独提交。
 
-课程仓库：[Gitee](https://gitee.com/zhu-jinpeng/ruanjiangouzaoshijian)。
+课程仓库：[软件构造实验](https://gitee.com/zhu-jinpeng/software-construction-lab)。

@@ -21,5 +21,5 @@
   2. 基于当前编译字节码的临时 JVM 复现验证：`EliteProEnemy` 减速期难度加 1 到期后恢复基础速度 `6`；边界 `locationX=0` 处冻结恢复后保持正向速度 `+3` 向右移动（`3, 6, 9`）；
   3. `Medium_Phone_API_37.0`（API 37）模拟器所列场景实测：冷启动安装运行、全屏画面与左右边缘夹紧（`02_left_edge`/`03_right_edge`）、自动射击计分与道具掉落、动态缩放（`720x1600`、`1080x2400`）与横竖屏旋转（`2400x1080`）保留得分与血量并按比例缩放夹紧坐标、锁屏/解锁及 Home 键启停线程（`GameThread started` / `GameThread stopped`）、撞击敌机结束并显示 `GAME OVER` / `SCORE: 135`；
   4. 四步迁移提交与工程版本保持同步。
-- **课程仓库**：[https://gitee.com/zhu-jinpeng/ruanjiangouzaoshijian](https://gitee.com/zhu-jinpeng/ruanjiangouzaoshijian)，保留四步迁移提交，文档修订单独提交。
+- **课程仓库**：[软件构造实验](https://gitee.com/zhu-jinpeng/software-construction-lab)，保留四步迁移提交，文档修订单独提交。
 - **后续工作**：实验三～七继续完成页面跳转、音效、本地存储与联网功能。
