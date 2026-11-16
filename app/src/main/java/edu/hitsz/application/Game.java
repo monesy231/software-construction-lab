@@ -111,6 +111,7 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
         enemyBullets = new LinkedList<>();
         supplies = new LinkedList<>();
 
+        new HeroController(this, heroAircraft);
         mSurfaceHolder = this.getHolder();
         mSurfaceHolder.addCallback(this);
         this.setFocusable(true);
@@ -208,7 +209,23 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
     public void run() {
         while (mbLoop) {
             long startTime = System.currentTimeMillis();
+            if (!gameOverHandled) {
+                gameTimeTick++;
+                spawnEnemyAction();
+                shootAction();
+                bulletsMoveAction();
+                aircraftsMoveAction();
+                suppliesMoveAction();
+                crashCheckAction();
+                increaseDifficultyIfNeeded();
+                postProcessAction();
+                checkResultAction();
+            }
             draw();
+            if (gameOverHandled) {
+                mbLoop = false;
+                break;
+            }
             long costTime = System.currentTimeMillis() - startTime;
             long sleepTime = Math.max(5, timeInterval - costTime);
             try {
