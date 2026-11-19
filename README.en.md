@@ -2,7 +2,7 @@
 
 A course project that migrates an existing Java Windows aircraft shooting game to Android, then adds menus, audio, local score storage, cloud rankings, and two-player score competition.
 
-**Current progress: Labs 1 and 2 are complete. The app starts directly in Easy mode.**
+**Labs 1 through 3 are complete.** The start menu offers Easy, Normal, and Hard modes and an audio switch.
 
 ## Project goals and roadmap
 
@@ -10,7 +10,7 @@ A course project that migrates an existing Java Windows aircraft shooting game t
 | --- | --- | --- |
 | Lab 1 | Migration analysis, project task book, and designs for two network features | Complete |
 | Lab 2 | Android project, images and game models, SurfaceView rendering, touch control, full game loop, four migration commits, and AI usage log | Complete |
-| Lab 3 | Difficulty selection, page navigation, game-over flow, background music, and sound effects | Planned |
+| Lab 3 | Difficulty menu, audio switch, game scenes, result dialog, music, and sound effects | Complete |
 | Lab 4 | Player-name entry, per-difficulty local rankings, persistent score records, and record management | Planned |
 | Lab 5 | Cloud leaderboard service and client, two-player rooms, synchronized start, live score and life status, and result comparison | Planned |
 | Lab 6 | Integrate advanced enemy, supply, and shooting mechanics; improve extended gameplay and interaction | Planned |
@@ -20,10 +20,10 @@ A course project that migrates an existing Java Windows aircraft shooting game t
 
 - Scrolling background, difficulty/score/life display, and touch-controlled movement with sprite-sized screen bounds.
 - Automatic shooting, enemy generation and movement, collision scoring, supply effects, and off-screen object cleanup.
-- Game-over display with the final score.
+- A result dialog with the selected difficulty and final score, plus options to replay or return to the menu.
 - Pause/resume across screen locking and app backgrounding, plus layout updates when the window size changes.
 
-All three difficulty rule classes have been migrated; the current entry point uses Easy mode. The selection UI and audio playback are scheduled for Lab 3. Local rankings and networking follow in Labs 4 and 5.
+The menu passes the difficulty and audio setting through an `Intent`. `MediaPlayer` handles regular and Boss music. `SoundPool` plays hit, pickup, explosion, and game-over effects. Local rankings and networking follow in Labs 4 and 5.
 
 ## Planned network features
 
@@ -37,7 +37,7 @@ The project is `AircraftWar2026`, with application ID `edu.hitsz`. Its configura
 1. Clone the repository into an English-only path, such as `C:\Projects\AircraftWar2026`.
 2. Open the directory containing `settings.gradle` in Android Studio, install the configured SDK/Build Tools, select bundled JBR 25, and sync Gradle.
 3. Run `app` on an API 30+ emulator or Android device with USB debugging enabled.
-4. Drag on the screen to move the hero aircraft; shooting is automatic.
+4. Set the audio switch and choose a difficulty. Drag on the screen to move the hero aircraft. Shooting is automatic.
 
 From the project root, build the debug APK and run Android Lint:
 
@@ -51,6 +51,6 @@ The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`. The Lint re
 
 See [README.md](README.md) for the Chinese project guide, [project task book](docs/实验一任务书.md), [AI usage log](docs/实验二AI使用日志.md), and [technical plan](docs/技术方案.md).
 
-Recorded Lab 2 checks cover build/Lint, API 37 emulator launch, touch boundaries, shooting and scoring, supplies, game over, pause/resume, resolution changes, and rotation. Git history preserves the four migration stages: empty Android project, resources and models, SurfaceView rendering, and touch control with the full game loop.
+Recorded Lab 2 checks cover build/Lint, API 37 emulator launch, touch boundaries, shooting and scoring, supplies, game over, pause/resume, resolution changes, and rotation. Git history preserves the four migration stages: empty Android project, resources and models, SurfaceView rendering, and touch control with the full game loop, followed by the Lab 3 commit adding the difficulty menu, `GameActivity` result dialog, and `MediaPlayer`/`SoundPool` audio playback.
 
-Repository: [Software Construction Lab](https://gitee.com/zhu-jinpeng/software-construction-lab).
+Repositories: Gitee [Software Construction Lab](https://gitee.com/zhu-jinpeng/software-construction-lab) | GitHub [software-construction-lab](https://github.com/monesy231/software-construction-lab).
