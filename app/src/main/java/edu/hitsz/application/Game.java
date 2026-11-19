@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.IntConsumer;
 
 /**
  * 模板模式中的抽象类角色：定义游戏主流程 action() 的算法骨架。
@@ -78,7 +79,8 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
     protected final List<BaseBullet> heroBullets;
     protected final List<BaseBullet> enemyBullets;
     protected final List<AbstractSupply> supplies;
-    protected final MusicManager musicManager = new MusicManager();
+    private final MusicManager musicManager;
+    private final IntConsumer onGameOver;
 
     protected int score = 0;
     private int enemySpawnCounter = 0;
@@ -86,6 +88,7 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
     private int enemyShootCounter = 0;
     private int gameTimeTick = 0;
     private boolean gameOverHandled = false;
+    private boolean backgroundMusicStarted = false;
     private boolean started = false;
     private boolean heroInitialized = false;
     private int lastWidth = 0;
@@ -98,9 +101,12 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
     private boolean activityResumed = false;
     private Thread gameThread;
 
-    public Game(Context context, GameDifficulty difficulty) {
+    public Game(Context context, GameDifficulty difficulty,
+                MusicManager musicManager, IntConsumer onGameOver) {
         super(context);
         this.difficulty = difficulty;
+        this.musicManager = musicManager;
+        this.onGameOver = onGameOver;
         ImageManager.initImage(context, difficulty);
 
         heroAircraft = HeroAircraft.getInstance();
@@ -180,9 +186,11 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
 
     private void startLoopIfReady() {
         if (surfaceReady && activityResumed && gameThread == null) {
-            if (!gameOverHandled) {
+            if (!backgroundMusicStarted) {
                 musicManager.loop(MusicManager.BGM, MusicManager.BGM_PATH);
+                backgroundMusicStarted = true;
             }
+            musicManager.resume();
             mbLoop = true;
             gameThread = new Thread(this, "GameThread");
             Log.i(TAG, "GameThread started");
@@ -192,7 +200,6 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
 
     private void stopLoop() {
         mbLoop = false;
-        musicManager.stopAllLoopMusic();
         if (gameThread != null) {
             gameThread.interrupt();
             try {
@@ -203,6 +210,7 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
             gameThread = null;
             Log.i(TAG, "GameThread stopped");
         }
+        musicManager.pause();
     }
 
     @Override
@@ -317,6 +325,7 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
                 continue;
             }
             if (heroAircraft.crash(bullet)) {
+                musicManager.playOnce(MusicManager.BULLET_HIT_PATH);
                 heroAircraft.decreaseHp(bullet.getPower());
                 bullet.vanish();
             }
@@ -336,9 +345,6 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
                     bullet.vanish();
                     if (enemyAircraft.notValid()) {
                         score += enemyAircraft.getScore();
-                        if (enemyAircraft instanceof BossEnemy) {
-                            musicManager.stop(MusicManager.BOSS_BGM);
-                        }
                         supplies.addAll(createSupplies(enemyAircraft));
                     }
                     break;
@@ -352,9 +358,6 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
             }
             if (enemyAircraft.crash(heroAircraft) || heroAircraft.crash(enemyAircraft)) {
                 enemyAircraft.vanish();
-                if (enemyAircraft instanceof BossEnemy) {
-                    musicManager.stop(MusicManager.BOSS_BGM);
-                }
                 heroAircraft.decreaseHp(Integer.MAX_VALUE);
             }
         }
@@ -364,16 +367,15 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
                 continue;
             }
             if (heroAircraft.crash(supply)) {
-                musicManager.playOnce(MusicManager.GET_SUPPLY_PATH);
+                supply.activate(heroAircraft);
                 if (supply instanceof BombSupply) {
-                    supply.activate(heroAircraft);
                     score += triggerBombProp();
                     musicManager.playOnce(MusicManager.BOMB_EXPLOSION_PATH);
-                } else if (supply instanceof FreezeSupply) {
-                    supply.activate(heroAircraft);
-                    triggerFreezeProp();
                 } else {
-                    supply.activate(heroAircraft);
+                    musicManager.playOnce(MusicManager.GET_SUPPLY_PATH);
+                    if (supply instanceof FreezeSupply) {
+                        triggerFreezeProp();
+                    }
                 }
                 supply.vanish();
             }
@@ -425,7 +427,7 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
         heroBullets.removeIf(AbstractFlyingObject::notValid);
         enemyAircrafts.removeIf(AbstractFlyingObject::notValid);
         supplies.removeIf(AbstractFlyingObject::notValid);
-        if (bossInvalid || !hasBossEnemy()) {
+        if (bossInvalid && heroAircraft.getHp() > 0) {
             musicManager.stop(MusicManager.BOSS_BGM);
         }
     }
@@ -437,6 +439,7 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
             musicManager.stopAllLoopMusic();
             musicManager.playOnce(MusicManager.GAME_OVER_PATH);
             Log.i(TAG, "Game Over! Score = " + score);
+            onGameOver.accept(score);
         }
     }
 

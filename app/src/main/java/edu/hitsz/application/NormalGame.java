@@ -2,14 +2,18 @@ package edu.hitsz.application;
 
 import android.content.Context;
 
+import java.util.function.IntConsumer;
+
+import edu.hitsz.music.MusicManager;
+
 /**
  * 模板模式具体类：普通模式。
  * 随时间提升敌机产生频率、敌机速度和敌机血量；Boss 血量保持固定。
  */
 public class NormalGame extends Game {
 
-    public NormalGame(Context context) {
-        super(context, GameDifficulty.NORMAL);
+    public NormalGame(Context context, MusicManager musicManager, IntConsumer onGameOver) {
+        super(context, GameDifficulty.NORMAL, musicManager, onGameOver);
     }
 
     @Override

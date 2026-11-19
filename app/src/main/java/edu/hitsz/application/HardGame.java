@@ -2,6 +2,10 @@ package edu.hitsz.application;
 
 import android.content.Context;
 
+import java.util.function.IntConsumer;
+
+import edu.hitsz.music.MusicManager;
+
 /**
  * 模板模式具体类：困难模式。
  * 随时间提升敌机产生频率、敌机速度、敌机血量、英雄机射击频率和敌机射击频率；
@@ -9,8 +13,8 @@ import android.content.Context;
  */
 public class HardGame extends Game {
 
-    public HardGame(Context context) {
-        super(context, GameDifficulty.HARD);
+    public HardGame(Context context, MusicManager musicManager, IntConsumer onGameOver) {
+        super(context, GameDifficulty.HARD, musicManager, onGameOver);
     }
 
     @Override

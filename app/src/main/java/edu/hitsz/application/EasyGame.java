@@ -2,14 +2,18 @@ package edu.hitsz.application;
 
 import android.content.Context;
 
+import java.util.function.IntConsumer;
+
+import edu.hitsz.music.MusicManager;
+
 /**
  * 模板模式具体类：简单模式。
  * 不生成 Boss，难度不随时间变化。
  */
 public class EasyGame extends Game {
 
-    public EasyGame(Context context) {
-        super(context, GameDifficulty.EASY);
+    public EasyGame(Context context, MusicManager musicManager, IntConsumer onGameOver) {
+        super(context, GameDifficulty.EASY, musicManager, onGameOver);
     }
 
     @Override
