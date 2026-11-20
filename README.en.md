@@ -21,9 +21,10 @@ A course project that migrates an existing Java Windows aircraft shooting game t
 - Scrolling background, difficulty/score/life display, and touch-controlled movement with sprite-sized screen bounds.
 - Automatic shooting, enemy generation and movement, collision scoring, supply effects, and off-screen object cleanup.
 - A result dialog with the selected difficulty and final score, plus options to replay or return to the menu.
-- Pause/resume across screen locking and app backgrounding, plus layout updates when the window size changes.
+- Gameplay and audio pause when the screen locks or the app moves to the background, then resume on return.
+- Window resizing adjusts the background and scales the positions of aircraft, bullets, and supplies while preserving score and health. A Boss sprite wider than the window stays centered.
 
-The menu passes the difficulty and audio setting through an `Intent`. `MediaPlayer` handles regular and Boss music. `SoundPool` plays hit, pickup, explosion, and game-over effects. Local rankings and networking follow in Labs 4 and 5.
+The menu passes the difficulty and audio setting through an `Intent`. `MusicManager` handles audio requests in order on the main thread. `MediaPlayer` plays regular and Boss music and resumes the regular track from its paused position. `SoundPool` plays hit, pickup, explosion, and game-over effects. Local rankings and networking follow in Labs 4 and 5.
 
 ## Planned network features
 
@@ -52,5 +53,7 @@ The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`. The Lint re
 See [README.md](README.md) for the Chinese project guide, [project task book](docs/实验一任务书.md), [AI usage log](docs/实验二AI使用日志.md), and [technical plan](docs/技术方案.md).
 
 Recorded Lab 2 checks cover build/Lint, API 37 emulator launch, touch boundaries, shooting and scoring, supplies, game over, pause/resume, resolution changes, and rotation. Git history preserves the four migration stages: empty Android project, resources and models, SurfaceView rendering, and touch control with the full game loop, followed by the Lab 3 commit adding the difficulty menu, `GameActivity` result dialog, and `MediaPlayer`/`SoundPool` audio playback.
+
+Lab 3 passed `assembleDebug` and `lintDebug` with **0 errors and 26 Lint warnings**. API 37 emulator checks covered difficulty selection, mute, and the result dialog. The latest checks covered score and health across window resizing, transitions between regular and Boss music, and audio pause and resume when leaving and returning to the game.
 
 Repositories: Gitee [Software Construction Lab](https://gitee.com/zhu-jinpeng/software-construction-lab) | GitHub [software-construction-lab](https://github.com/monesy231/software-construction-lab).

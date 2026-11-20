@@ -4,6 +4,8 @@ import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
+import android.os.Handler;
+import android.os.Looper;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,6 +39,7 @@ public class MusicManager {
     );
 
     private final Context context;
+    private final Handler audioHandler = new Handler(Looper.getMainLooper());
     private final Map<String, MediaPlayer> loopPlayers = new HashMap<>();
     private final Map<String, Integer> effectIds = new HashMap<>();
     private final Set<Integer> loadedEffects = new HashSet<>();
@@ -58,25 +61,27 @@ public class MusicManager {
         }
     }
 
-    private synchronized void onEffectLoaded(SoundPool pool, int sampleId, int status) {
+    private void onEffectLoaded(SoundPool pool, int sampleId, int status) {
         if (pool == soundPool && status == 0) {
             loadedEffects.add(sampleId);
         }
     }
 
-    public synchronized void loop(String key, String path) {
-        if (soundPool == null) {
-            return;
-        }
-        if (!loopPlayers.containsKey(key)) {
-            MediaPlayer player = MediaPlayer.create(context, MUSIC_RESOURCES.get(path));
-            if (player == null) {
+    public void loop(String key, String path) {
+        audioHandler.post(() -> {
+            if (soundPool == null) {
                 return;
             }
-            player.setLooping(true);
-            loopPlayers.put(key, player);
-        }
-        updateBackgroundMusic();
+            if (!loopPlayers.containsKey(key)) {
+                MediaPlayer player = MediaPlayer.create(context, MUSIC_RESOURCES.get(path));
+                if (player == null) {
+                    return;
+                }
+                player.setLooping(true);
+                loopPlayers.put(key, player);
+            }
+            updateBackgroundMusic();
+        });
     }
 
     private void updateBackgroundMusic() {
@@ -96,44 +101,58 @@ public class MusicManager {
         }
     }
 
-    public synchronized void playOnce(String path) {
-        Integer sampleId = effectIds.get(path);
-        if (soundPool != null && !paused && loadedEffects.contains(sampleId)) {
-            soundPool.play(sampleId, 1f, 1f, 1, 0, 1f);
-        }
+    public void playOnce(String path) {
+        audioHandler.post(() -> {
+            Integer sampleId = effectIds.get(path);
+            if (soundPool != null && !paused && loadedEffects.contains(sampleId)) {
+                soundPool.play(sampleId, 1f, 1f, 1, 0, 1f);
+            }
+        });
     }
 
-    public synchronized void stop(String key) {
-        MediaPlayer player = loopPlayers.remove(key);
-        if (player != null) {
-            player.release();
-        }
-        updateBackgroundMusic();
+    public void stop(String key) {
+        audioHandler.post(() -> {
+            MediaPlayer player = loopPlayers.remove(key);
+            if (player != null) {
+                player.release();
+            }
+            updateBackgroundMusic();
+        });
     }
 
-    public synchronized void stopAllLoopMusic() {
+    public void stopAllLoopMusic() {
+        audioHandler.post(this::releaseLoopPlayers);
+    }
+
+    private void releaseLoopPlayers() {
         loopPlayers.values().forEach(MediaPlayer::release);
         loopPlayers.clear();
     }
 
-    public synchronized void pause() {
-        paused = true;
-        updateBackgroundMusic();
-        if (soundPool != null) {
-            soundPool.autoPause();
-        }
+    public void pause() {
+        audioHandler.post(() -> {
+            paused = true;
+            updateBackgroundMusic();
+            if (soundPool != null) {
+                soundPool.autoPause();
+            }
+        });
     }
 
-    public synchronized void resume() {
-        paused = false;
-        updateBackgroundMusic();
-        if (soundPool != null) {
-            soundPool.autoResume();
-        }
+    public void resume() {
+        audioHandler.post(() -> {
+            paused = false;
+            updateBackgroundMusic();
+            if (soundPool != null) {
+                soundPool.autoResume();
+            }
+        });
     }
 
-    public synchronized void release() {
-        stopAllLoopMusic();
+    /** 由游戏 Activity 在主线程销毁时调用。 */
+    public void release() {
+        audioHandler.removeCallbacksAndMessages(null);
+        releaseLoopPlayers();
         if (soundPool != null) {
             soundPool.setOnLoadCompleteListener(null);
             soundPool.release();

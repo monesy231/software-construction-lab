@@ -154,11 +154,17 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
             heroAircraft.setLocation(clampedX, clampedY);
             heroInitialized = true;
         } else if (oldWidth > 0 && oldHeight > 0 && (oldWidth != width || oldHeight != height)) {
-            int scaledX = Math.round(heroAircraft.getLocationX() * (float) width / oldWidth);
-            int scaledY = Math.round(heroAircraft.getLocationY() * (float) height / oldHeight);
+            float scaleX = (float) width / oldWidth;
+            float scaleY = (float) height / oldHeight;
+            int scaledX = Math.round(heroAircraft.getLocationX() * scaleX);
+            int scaledY = Math.round(heroAircraft.getLocationY() * scaleY);
             int clampedX = Math.max(halfW, Math.min(Math.max(halfW, width - halfW), scaledX));
             int clampedY = Math.max(halfH, Math.min(Math.max(halfH, height - halfH), scaledY));
             heroAircraft.setLocation(clampedX, clampedY);
+            scalePositions(enemyAircrafts, scaleX, scaleY, width);
+            scalePositions(heroBullets, scaleX, scaleY, width);
+            scalePositions(enemyBullets, scaleX, scaleY, width);
+            scalePositions(supplies, scaleX, scaleY, width);
         }
         Log.i(TAG, "surfaceChanged " + oldWidth + "x" + oldHeight + " -> " + width + "x" + height
                 + ", hero=(" + heroAircraft.getLocationX() + "," + heroAircraft.getLocationY() + ")"
@@ -166,6 +172,19 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
         backGroundTop = backGroundTop % Math.max(1, Main.WINDOW_HEIGHT);
         surfaceReady = true;
         startLoopIfReady();
+    }
+
+    private void scalePositions(List<? extends AbstractFlyingObject> objects,
+                                float scaleX, float scaleY, int width) {
+        for (AbstractFlyingObject object : objects) {
+            int x = Math.round(object.getLocationX() * scaleX);
+            int y = Math.round(object.getLocationY() * scaleY);
+            if (object instanceof BossEnemy) {
+                int halfWidth = Math.min(object.getWidth() / 2, width / 2);
+                x = Math.max(halfWidth, Math.min(width - halfWidth, x));
+            }
+            object.setLocation(x, y);
+        }
     }
 
     @Override
