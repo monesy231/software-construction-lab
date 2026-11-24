@@ -29,6 +29,8 @@ public class ImageManager {
 
     private static final Map<String, Bitmap> CLASSNAME_IMAGE_MAP = new HashMap<>();
     private static boolean initialized = false;
+    private static GameDifficulty loadedDifficulty;
+    private static Bitmap rawBackgroundImage;
 
     public static Bitmap BACKGROUND_IMAGE;
     public static Bitmap HERO_IMAGE;
@@ -84,7 +86,13 @@ public class ImageManager {
         setBackgroundImage(appContext, difficulty);
     }
 
-    public static void setBackgroundImage(Context context, GameDifficulty difficulty) {
+    public static synchronized void setBackgroundImage(Context context, GameDifficulty difficulty) {
+        if (rawBackgroundImage != null && loadedDifficulty == difficulty) {
+            if (BACKGROUND_IMAGE == null) {
+                BACKGROUND_IMAGE = rawBackgroundImage;
+            }
+            return;
+        }
         Context appContext = context.getApplicationContext();
         int bgResId = R.drawable.bg;
         if (difficulty == GameDifficulty.NORMAL) {
@@ -92,13 +100,21 @@ public class ImageManager {
         } else if (difficulty == GameDifficulty.HARD) {
             bgResId = R.drawable.bg5;
         }
-        BACKGROUND_IMAGE = BitmapFactory.decodeResource(appContext.getResources(), bgResId);
+        rawBackgroundImage = BitmapFactory.decodeResource(appContext.getResources(), bgResId);
+        loadedDifficulty = difficulty;
+        BACKGROUND_IMAGE = rawBackgroundImage;
     }
 
-    public static void scaleBackground(int width, int height) {
-        if (BACKGROUND_IMAGE != null && width > 0 && height > 0) {
-            BACKGROUND_IMAGE = Bitmap.createScaledBitmap(BACKGROUND_IMAGE, width, height, true);
+    public static synchronized void scaleBackground(int width, int height) {
+        if (rawBackgroundImage == null || width <= 0 || height <= 0) {
+            return;
         }
+        if (BACKGROUND_IMAGE != null
+                && BACKGROUND_IMAGE.getWidth() == width
+                && BACKGROUND_IMAGE.getHeight() == height) {
+            return;
+        }
+        BACKGROUND_IMAGE = Bitmap.createScaledBitmap(rawBackgroundImage, width, height, true);
     }
 
     public static Bitmap get(String className) {

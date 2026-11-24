@@ -24,7 +24,11 @@ A course project that migrates an existing Java Windows aircraft shooting game t
 - Gameplay and audio pause when the screen locks or the app moves to the background, then resume on return.
 - Window resizing adjusts the background and scales the positions of aircraft, bullets, and supplies while preserving score and health. A Boss sprite wider than the window stays centered.
 
-The menu passes the difficulty and audio setting through an `Intent`. `MusicManager` handles audio requests in order on the main thread. `MediaPlayer` plays regular and Boss music and resumes the regular track from its paused position. `SoundPool` plays hit, pickup, explosion, and game-over effects. Local rankings and networking follow in Labs 4 and 5.
+`MainActivity` loads the difficulty menu from XML, registers listeners, persists the audio toggle in `SharedPreferences`, and passes the difficulty and audio setting in an `Intent`. Following `HandlerDemo(1).rar`, the game thread reports a game-over `Message` via `Message.obtain()` with the event type in `what` and the score in `arg1`. `GameActivity` uses a static `WeakReference` subclass `GameHandler` overriding `handleMessage()` to display the result dialog on the main thread, defers pending results until resumed, and dismisses any active dialog in `onDestroy()` to avoid window leaks.
+
+Following the Lab 3 slides, `MyMediaPlayer` (`public class`) wraps regular and Boss looping tracks and pauses the regular track while Boss music plays, resuming from the paused position afterward. `MySoundPool` (`public class`) follows `Actvity_SoundPool.zip` with `AudioAttributes` (`USAGE_GAME`), 10 max concurrent streams, and a `soundPoolMap` sample registry to play hit, pickup, explosion, and game-over effects once loaded (with load-completion playback compensation for critical effects). `MusicManager` tracks explicit enabled/paused/released flags and dispatches requests in order on the main-thread `Handler`.
+
+To align with `SurfaceViewDemo` and Lab 2 guidelines, `ImageManager` caches the raw background bitmap and loaded difficulty to avoid redundant decoding/scaling, `AbstractFlyingObject` marks coordinates and validity `volatile`, and `Game` uses an anti-aliased `Paint`, `synchronized (mSurfaceHolder)` around canvas drawing, `WindowInsets` safe margins for the HUD, and game-over guards so resizing or resuming while ended repaints the final frame without restarting `GameThread` or music. Local rankings and networking follow in Labs 4 and 5.
 
 ## Planned network features
 
@@ -40,20 +44,20 @@ The project is `AircraftWar2026`, with application ID `edu.hitsz`. Its configura
 3. Run `app` on an API 30+ emulator or Android device with USB debugging enabled.
 4. Set the audio switch and choose a difficulty. Drag on the screen to move the hero aircraft. Shooting is automatic.
 
-From the project root, build the debug APK and run Android Lint:
+From the project root, run the unit tests, build the debug APK, and run Android Lint:
 
 ```powershell
-.\gradlew.bat assembleDebug lintDebug
+.\gradlew.bat testDebugUnitTest assembleDebug lintDebug
 ```
 
-The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`. The Lint report is at `app/build/reports/lint-results-debug.html`.
+`gradle.properties` sets `android.overridePathCheck=true` and `-Dfile.encoding=COMPAT` alongside explicit UTF-8 `JavaCompile` options in `app/build.gradle`, so Android Studio Panda can sync, build, and run JUnit 4 unit tests directly even under a Chinese parent directory. The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`, test results at `app/build/reports/tests/testDebugUnitTest/index.html`, and the Lint report at `app/build/reports/lint-results-debug.html`.
 
 ## Documentation and validation
 
 See [README.md](README.md) for the Chinese project guide, [project task book](docs/实验一任务书.md), [AI usage log](docs/实验二AI使用日志.md), and [technical plan](docs/技术方案.md).
 
-Recorded Lab 2 checks cover build/Lint, API 37 emulator launch, touch boundaries, shooting and scoring, supplies, game over, pause/resume, resolution changes, and rotation. Git history preserves the four migration stages: empty Android project, resources and models, SurfaceView rendering, and touch control with the full game loop, followed by the Lab 3 commit adding the difficulty menu, `GameActivity` result dialog, and `MediaPlayer`/`SoundPool` audio playback.
+Recorded Lab 2 checks cover build/Lint, API 37 emulator launch, touch boundaries, shooting and scoring, supplies, game over, pause/resume, resolution changes, and rotation. Git history preserves the four migration stages: empty Android project, resources and models, SurfaceView rendering, and touch control with the full game loop, followed by the Lab 3 commits.
 
-Lab 3 passed `assembleDebug` and `lintDebug` with **0 errors and 26 Lint warnings**. API 37 emulator checks covered difficulty selection, mute, and the result dialog. The latest checks covered score and health across window resizing, transitions between regular and Boss music, and audio pause and resume when leaving and returning to the game.
+The latest Lab 1–3 optimization build passed `clean testDebugUnitTest assembleDebug lintDebug --offline --no-daemon` with **12/12 JUnit 4 unit tests passing** (`HeroAircraftTest`: 7, `GameCoreLogicTest`: 5; 0 failed, 0 skipped), produced a `10,692,823`-byte debug APK, and passed Lint with **0 errors and 26 expected warnings**. End-to-end checks on `emulator-5554` verified menu difficulty buttons, `SharedPreferences` persistence for `audio_switch`, active `MediaPlayer` and `SoundPool` (`USAGE_GAME`) playback in `HardGame`, touch boundary clamping, sleep/wake and Home/Recents `GameThread` pause/resume, proportional position scaling across resize (`1080×2400 -> 720×1600 -> 1080×2400`) and rotation (`2400×1080 -> 1080×2400`), no spurious thread/audio restart when resizing while the result dialog is open, replay (`recreate()`), return to menu (`finish()`), silent mute mode, and **0 `FATAL EXCEPTION`, `ANR`, or `WindowLeaked`** entries in Logcat.
 
 Repositories: Gitee [Software Construction Lab](https://gitee.com/zhu-jinpeng/software-construction-lab) | GitHub [software-construction-lab](https://github.com/monesy231/software-construction-lab).

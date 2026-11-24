@@ -40,7 +40,11 @@
 - 切到后台或锁屏时暂停游戏与音频，返回前台可继续本局。
 - 窗口尺寸变化时，背景随画布调整，英雄机、敌机、子弹和道具按比例换算位置，本局得分和血量保留。Boss 贴图宽于窗口时居中显示。
 
-菜单通过 `Intent` 传递难度和音频设置。开启音频后，`MusicManager` 通过主线程 `Handler` 按顺序执行音频操作。`MediaPlayer` 播放普通和 Boss 配乐，Boss 退场后从暂停处继续普通配乐。`SoundPool` 播放子弹命中、道具拾取、炸弹爆炸和游戏结束音效。本地排行榜和联网功能分别安排在实验四和实验五。
+实验三按讲义和两份课程示例优化实现。`MainActivity` 从 XML 加载难度菜单，用控件监听器响应操作，并将音频开关持久化至 `SharedPreferences`，通过 `Intent` 传递难度和音频设置。参考 `HandlerDemo(1).rar`，游戏子线程结束时由回调通过 `Message.obtain()` 发送 `Message`（`what` 标识结束事件、`arg1` 携带得分），`GameActivity` 通过静态弱引用 `GameHandler` 重写 `handleMessage()` 在主线程处理结算弹窗；若界面已暂停则暂存并在恢复前台时显示，销毁时主动关闭弹窗避免窗口泄漏。
+
+按实验三讲义，`public class MyMediaPlayer` 封装普通和 Boss 循环配乐（`playBgm` / `playBossBgm` / `stopBossBgm`），Boss 出场时暂停普通配乐，退场后从暂停处继续。`public class MySoundPool` 参考 `Actvity_SoundPool.zip`，使用 `AudioAttributes` 与 `SoundPool.Builder`（10 路并发）预加载 `res/raw` 音效并通过 `soundPoolMap` 映射样本 ID，加载完成后按优先级播放子弹命中、道具拾取、炸弹爆炸和游戏结束音（对未就绪关键音效提供加载完成补播）。`MusicManager` 显式维护开关、暂停与释放状态，在主线程 `Handler` 上顺序分派请求并在退出时释放资源。
+
+针对 `SurfaceView` 与跨平台稳定性，`ImageManager` 缓存原始背景图与当前难度，避免同分辨率反复解码或二次缩放；`AbstractFlyingObject` 对坐标与存活标志使用 `volatile` 保证跨线程可见性；`Game` 开启抗锯齿画笔、在 `draw()` 中对 `SurfaceHolder` 加锁并结合 `WindowInsets` 避让状态栏与刘海区域，同时阻止游戏结束后因窗口变化或生命周期恢复误重启 `GameThread` 或恢复配乐（仅在画布就绪时重绘结束画面）。本地排行榜和联网功能分别安排在实验四和实验五。
 
 ## 两项网络功能怎么做
 
@@ -81,44 +85,46 @@
 在工程根目录执行：
 
 ```powershell
-.\gradlew.bat assembleDebug lintDebug
+.\gradlew.bat testDebugUnitTest assembleDebug lintDebug
 ```
 
-调试安装包生成于 `app/build/outputs/apk/debug/app-debug.apk`，Lint 报告生成于 `app/build/reports/lint-results-debug.html`。
+工程已配置 `android.overridePathCheck=true`、`org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=COMPAT` 与 `JavaCompile` UTF-8 编码选项，可在 Android Studio Panda 及中文父目录下直接运行 JUnit 4 单元测试、构建与 Lint。调试安装包生成于 `app/build/outputs/apk/debug/app-debug.apk`，测试与 Lint 报告分别位于 `app/build/reports/tests/testDebugUnitTest/index.html` 与 `app/build/reports/lint-results-debug.html`。
 
 ## 代码与文档在哪里
 
 ```text
 AircraftWar2026/
-├── app/src/main/
-│   ├── AndroidManifest.xml       # 应用入口与 Activity 配置
-│   ├── java/edu/hitsz/
-│   │   ├── MainActivity.java     # 难度选择与音频开关
-│   │   ├── GameActivity.java     # 游戏入口、前后台切换与结算
-│   │   ├── application/          # 游戏循环、绘制、图片加载、触控与难度规则
-│   │   ├── aircraft/            # 飞机模型
-│   │   ├── bullet/              # 子弹模型
-│   │   ├── supply/              # 道具
-│   │   ├── observer/            # 道具效果通知
-│   │   ├── factory/             # 敌机与道具创建
-│   │   ├── strategy/            # 射击策略
-│   │   └── music/               # 背景音乐与事件音效管理
-│   └── res/                     # Android 图片、布局、音频与样式资源
-├── docs/                        # 任务书、AI 日志与技术方案
-└── gradle/                      # Gradle Wrapper
+├── app/src/
+│   ├── main/
+│   │   ├── AndroidManifest.xml       # 应用入口与 Activity 配置
+│   │   ├── java/edu/hitsz/
+│   │   │   ├── MainActivity.java     # 难度选择与音频开关
+│   │   │   ├── GameActivity.java     # 游戏入口、前后台切换、GameHandler 与结算
+│   │   │   ├── application/          # 游戏循环、绘制、图片缓存、触控与难度规则
+│   │   │   ├── aircraft/             # 飞机模型
+│   │   │   ├── bullet/               # 子弹模型
+│   │   │   ├── supply/               # 道具
+│   │   │   ├── observer/             # 道具效果通知
+│   │   │   ├── factory/              # 敌机与道具创建
+│   │   │   ├── strategy/             # 射击策略
+│   │   │   └── music/                # MusicManager、MyMediaPlayer 与 MySoundPool
+│   │   └── res/                      # Android 图片、布局、音频与样式资源
+│   └── test/java/edu/hitsz/          # JUnit 4 单元测试（HeroAircraftTest、GameCoreLogicTest）
+├── docs/                             # 任务书、AI 日志与技术方案
+└── gradle/                           # Gradle Wrapper
 ```
 
 | 文档 | 用途 |
 | --- | --- |
 | [实验一任务书](docs/实验一任务书.md) | 查看项目目标、迁移分析、两项网络功能设计及预期成果 |
 | [实验二 AI 使用日志](docs/实验二AI使用日志.md) | 查看迁移过程中使用 AI 的情况、实际修改和验证记录 |
-| [技术方案](docs/技术方案.md) | 查看四步迁移路线、代码适配说明及后续阶段实现计划 |
+| [技术方案](docs/技术方案.md) | 查看四步迁移路线、实验三课件与示例对照，以及后续阶段实现计划 |
 
 ## 验证与提交记录
 
 实验二已有构建和运行记录：构建与 Lint 检查通过；在 API 37 模拟器上验证了启动、触控边界、射击计分、道具掉落、游戏结束、锁屏与前后台切换，以及动态分辨率调整和横竖屏旋转。具体操作和结果见 [AI 使用日志](docs/实验二AI使用日志.md)。
 
-实验三通过 `assembleDebug` 和 `lintDebug`，Lint 为 **0 错误、26 条警告**。实验三在 API 37 模拟器上验证了难度选择、音频开关和本局结算。本次修订复测了窗口缩放时保留得分和血量、普通与 Boss 配乐切换，以及切到后台暂停、回到游戏恢复播放。
+2026-11-24 的最新课程对标优化版本通过 `.\gradlew.bat clean testDebugUnitTest assembleDebug lintDebug --offline --no-daemon`：**12 项 JUnit 4 单元测试全部通过**（`HeroAircraftTest` 7 项、`GameCoreLogicTest` 5 项，0 失败、0 跳过），生成 `10,692,823` 字节调试 APK，Lint 为 **0 错误、26 条预期警告**（均来自原图资源目录与模板构造函数提示，`Activity` 与音频/游戏核心类 0 警告）。在 `emulator-5554` 模拟器完成全流程实测：三档难度按钮与音频开关 `SharedPreferences` 持久化、开启音频进入 `HardGame` 时 `MediaPlayer`（`looping=true`）与 `SoundPool`（`USAGE_GAME`）运行正常、边缘触屏夹紧、锁屏休眠与 Home/最近任务切换成对启停 `GameThread`、分辨率缩放（`1080×2400 -> 720×1600 -> 1080×2400`）与横竖屏旋转（`2400×1080 -> 1080×2400`）按比例换算坐标并保留得分血量、结算弹窗显示期间尺寸变化不误重启线程与音频、“再玩一局”与“返回菜单”正常流转、静音模式无活跃 `MediaPlayer`，全过程 Logcat **0 `FATAL EXCEPTION`、0 `ANR`、0 `WindowLeaked`**。
 
 Git 历史保留四个迁移阶段：**空 Android 工程 → 图片资源与游戏模型 → SurfaceView 渲染 → 触屏与完整游戏循环**；实验三新增难度选择菜单、`GameActivity` 结算流程以及 `MediaPlayer`/`SoundPool` 音频系统提交。后续功能和文档调整继续按阶段提交。
 

@@ -4,11 +4,13 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Insets;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.WindowInsets;
 
 import edu.hitsz.aircraft.AbstractEnemy;
 import edu.hitsz.aircraft.BossEnemy;
@@ -87,15 +89,17 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
     private int heroShootCounter = 0;
     private int enemyShootCounter = 0;
     private int gameTimeTick = 0;
-    private boolean gameOverHandled = false;
+    private volatile boolean gameOverHandled = false;
     private boolean backgroundMusicStarted = false;
     private boolean started = false;
     private boolean heroInitialized = false;
     private int lastWidth = 0;
     private int lastHeight = 0;
+    private int safeInsetLeft = 0;
+    private int safeInsetTop = 0;
 
     private final SurfaceHolder mSurfaceHolder;
-    private final Paint mPaint = new Paint();
+    private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private volatile boolean mbLoop = false;
     private boolean surfaceReady = false;
     private boolean activityResumed = false;
@@ -144,6 +148,14 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
 
         ImageManager.setBackgroundImage(getContext(), difficulty);
         ImageManager.scaleBackground(width, height);
+
+        WindowInsets rootInsets = getRootWindowInsets();
+        if (rootInsets != null) {
+            Insets safeInsets = rootInsets.getInsets(
+                    WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+            safeInsetLeft = safeInsets.left;
+            safeInsetTop = safeInsets.top;
+        }
 
         int halfW = heroAircraft.getWidth() / 2;
         int halfH = heroAircraft.getHeight() / 2;
@@ -204,6 +216,12 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
     }
 
     private void startLoopIfReady() {
+        if (gameOverHandled) {
+            if (surfaceReady) {
+                draw();
+            }
+            return;
+        }
         if (surfaceReady && activityResumed && gameThread == null) {
             if (!backgroundMusicStarted) {
                 musicManager.loop(MusicManager.BGM, MusicManager.BGM_PATH);
@@ -229,7 +247,9 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
             gameThread = null;
             Log.i(TAG, "GameThread stopped");
         }
-        musicManager.pause();
+        if (!gameOverHandled) {
+            musicManager.pause();
+        }
     }
 
     @Override
@@ -463,44 +483,46 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
     }
 
     protected void draw() {
-        Canvas canvas = mSurfaceHolder.lockCanvas();
-        if (canvas == null) {
-            return;
-        }
-        try {
-            Bitmap bg = ImageManager.BACKGROUND_IMAGE;
-            if (bg != null) {
-                canvas.drawBitmap(bg, 0, this.backGroundTop - Main.WINDOW_HEIGHT, null);
-                canvas.drawBitmap(bg, 0, this.backGroundTop, null);
-                if (!gameOverHandled) {
-                    this.backGroundTop += 2;
-                    if (this.backGroundTop >= Main.WINDOW_HEIGHT) {
-                        this.backGroundTop = 0;
+        synchronized (mSurfaceHolder) {
+            Canvas canvas = mSurfaceHolder.lockCanvas();
+            if (canvas == null) {
+                return;
+            }
+            try {
+                Bitmap bg = ImageManager.BACKGROUND_IMAGE;
+                if (bg != null) {
+                    canvas.drawBitmap(bg, 0, this.backGroundTop - Main.WINDOW_HEIGHT, null);
+                    canvas.drawBitmap(bg, 0, this.backGroundTop, null);
+                    if (!gameOverHandled) {
+                        this.backGroundTop += 2;
+                        if (this.backGroundTop >= Main.WINDOW_HEIGHT) {
+                            this.backGroundTop = 0;
+                        }
                     }
                 }
+
+                paintImageWithPositionRevised(canvas, enemyBullets);
+                paintImageWithPositionRevised(canvas, heroBullets);
+                paintImageWithPositionRevised(canvas, enemyAircrafts);
+                paintImageWithPositionRevised(canvas, supplies);
+
+                if (ImageManager.HERO_IMAGE != null) {
+                    canvas.drawBitmap(
+                            ImageManager.HERO_IMAGE,
+                            heroAircraft.getLocationX() - ImageManager.HERO_IMAGE.getWidth() / 2f,
+                            heroAircraft.getLocationY() - ImageManager.HERO_IMAGE.getHeight() / 2f,
+                            null
+                    );
+                }
+
+                paintScoreAndLife(canvas);
+
+                if (gameOverHandled) {
+                    paintGameOver(canvas);
+                }
+            } finally {
+                mSurfaceHolder.unlockCanvasAndPost(canvas);
             }
-
-            paintImageWithPositionRevised(canvas, enemyBullets);
-            paintImageWithPositionRevised(canvas, heroBullets);
-            paintImageWithPositionRevised(canvas, enemyAircrafts);
-            paintImageWithPositionRevised(canvas, supplies);
-
-            if (ImageManager.HERO_IMAGE != null) {
-                canvas.drawBitmap(
-                        ImageManager.HERO_IMAGE,
-                        heroAircraft.getLocationX() - ImageManager.HERO_IMAGE.getWidth() / 2f,
-                        heroAircraft.getLocationY() - ImageManager.HERO_IMAGE.getHeight() / 2f,
-                        null
-                );
-            }
-
-            paintScoreAndLife(canvas);
-
-            if (gameOverHandled) {
-                paintGameOver(canvas);
-            }
-        } finally {
-            mSurfaceHolder.unlockCanvasAndPost(canvas);
         }
     }
 
@@ -524,9 +546,10 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
     }
 
     private void paintScoreAndLife(Canvas g) {
-        float textSize = Math.max(36f, Main.WINDOW_WIDTH * 0.05f);
-        float x = 24f;
-        float y = Math.max(96f, Main.WINDOW_HEIGHT * 0.06f);
+        int minDim = Math.min(Main.WINDOW_WIDTH, Main.WINDOW_HEIGHT);
+        float textSize = Math.max(36f, minDim * 0.05f);
+        float x = Math.max(24f, safeInsetLeft + 24f);
+        float y = Math.max(safeInsetTop + textSize + 12f, Main.WINDOW_HEIGHT * 0.06f);
         mPaint.setColor(Color.RED);
         mPaint.setTypeface(Typeface.DEFAULT_BOLD);
         mPaint.setTextSize(textSize);
@@ -539,14 +562,15 @@ public abstract class Game extends SurfaceView implements SurfaceHolder.Callback
     }
 
     private void paintGameOver(Canvas g) {
+        int minDim = Math.min(Main.WINDOW_WIDTH, Main.WINDOW_HEIGHT);
         mPaint.setColor(Color.argb(180, 0, 0, 0));
         g.drawRect(0, Main.WINDOW_HEIGHT * 0.4f, Main.WINDOW_WIDTH, Main.WINDOW_HEIGHT * 0.6f, mPaint);
         mPaint.setColor(Color.WHITE);
         mPaint.setTypeface(Typeface.DEFAULT_BOLD);
         mPaint.setTextAlign(Paint.Align.CENTER);
-        mPaint.setTextSize(Math.max(48f, Main.WINDOW_WIDTH * 0.08f));
+        mPaint.setTextSize(Math.max(48f, minDim * 0.08f));
         g.drawText("GAME OVER", Main.WINDOW_WIDTH / 2f, Main.WINDOW_HEIGHT * 0.48f, mPaint);
-        mPaint.setTextSize(Math.max(36f, Main.WINDOW_WIDTH * 0.055f));
+        mPaint.setTextSize(Math.max(36f, minDim * 0.055f));
         g.drawText("SCORE: " + this.score, Main.WINDOW_WIDTH / 2f, Main.WINDOW_HEIGHT * 0.55f, mPaint);
         mPaint.setTextAlign(Paint.Align.LEFT);
     }

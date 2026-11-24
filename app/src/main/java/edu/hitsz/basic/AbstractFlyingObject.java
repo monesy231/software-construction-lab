@@ -13,8 +13,8 @@ import edu.hitsz.application.Main;
 public abstract class AbstractFlyingObject {
 
     //locationX,locationY为图片中心位置坐标
-    protected int locationX;
-    protected int locationY;
+    protected volatile int locationX;
+    protected volatile int locationY;
 
     // x,y轴移动速度
     protected int speedX;
@@ -37,7 +37,7 @@ public abstract class AbstractFlyingObject {
     protected int height = -1;
 
     //有效（生存）标记，标记为 false的对象会在下次刷新时清除
-    protected boolean isValid = true;
+    protected volatile boolean isValid = true;
 
     public AbstractFlyingObject() {
     }

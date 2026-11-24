@@ -1,19 +1,12 @@
 package edu.hitsz.music;
 
 import android.content.Context;
-import android.media.AudioAttributes;
-import android.media.MediaPlayer;
-import android.media.SoundPool;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import edu.hitsz.R;
-
+/**
+ * 统一调度游戏背景音乐（MyMediaPlayer）与战斗音效（MySoundPool）。
+ */
 public class MusicManager {
 
     public static final String BGM = "bgm";
@@ -26,139 +19,107 @@ public class MusicManager {
     public static final String GAME_OVER_PATH = "game_over";
     public static final String GET_SUPPLY_PATH = "get_supply";
 
-    private static final Map<String, Integer> MUSIC_RESOURCES = Map.of(
-            BGM_PATH, R.raw.bgm,
-            BOSS_BGM_PATH, R.raw.bgm_boss
-    );
-
-    private static final Map<String, Integer> EFFECT_RESOURCES = Map.of(
-            BOMB_EXPLOSION_PATH, R.raw.bomb_explosion,
-            BULLET_HIT_PATH, R.raw.bullet_hit,
-            GAME_OVER_PATH, R.raw.game_over,
-            GET_SUPPLY_PATH, R.raw.get_supply
-    );
-
-    private final Context context;
+    private final boolean enabled;
     private final Handler audioHandler = new Handler(Looper.getMainLooper());
-    private final Map<String, MediaPlayer> loopPlayers = new HashMap<>();
-    private final Map<String, Integer> effectIds = new HashMap<>();
-    private final Set<Integer> loadedEffects = new HashSet<>();
-    private SoundPool soundPool;
+    private MyMediaPlayer mediaPlayer;
+    private MySoundPool soundPool;
     private boolean paused;
+    private boolean released;
 
     public MusicManager(Context context, boolean enabled) {
-        this.context = context.getApplicationContext();
+        this.enabled = enabled;
         if (enabled) {
-            AudioAttributes attributes = new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_GAME)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build();
-            soundPool = new SoundPool.Builder().setAudioAttributes(attributes).setMaxStreams(4).build();
-            soundPool.setOnLoadCompleteListener(this::onEffectLoaded);
-            for (Map.Entry<String, Integer> effect : EFFECT_RESOURCES.entrySet()) {
-                effectIds.put(effect.getKey(), soundPool.load(this.context, effect.getValue(), 1));
-            }
-        }
-    }
-
-    private void onEffectLoaded(SoundPool pool, int sampleId, int status) {
-        if (pool == soundPool && status == 0) {
-            loadedEffects.add(sampleId);
+            Context appContext = context.getApplicationContext();
+            this.mediaPlayer = new MyMediaPlayer(appContext);
+            this.soundPool = new MySoundPool(appContext);
         }
     }
 
     public void loop(String key, String path) {
         audioHandler.post(() -> {
-            if (soundPool == null) {
+            if (!enabled || released || mediaPlayer == null) {
                 return;
             }
-            if (!loopPlayers.containsKey(key)) {
-                MediaPlayer player = MediaPlayer.create(context, MUSIC_RESOURCES.get(path));
-                if (player == null) {
-                    return;
-                }
-                player.setLooping(true);
-                loopPlayers.put(key, player);
+            if (BOSS_BGM.equals(key) || BOSS_BGM_PATH.equals(path)) {
+                mediaPlayer.playBossBgm();
+            } else if (BGM.equals(key) || BGM_PATH.equals(path)) {
+                mediaPlayer.playBgm();
             }
-            updateBackgroundMusic();
         });
-    }
-
-    private void updateBackgroundMusic() {
-        MediaPlayer boss = loopPlayers.get(BOSS_BGM);
-        setPlaying(loopPlayers.get(BGM), !paused && boss == null);
-        setPlaying(boss, !paused);
-    }
-
-    private void setPlaying(MediaPlayer player, boolean play) {
-        if (player == null) {
-            return;
-        }
-        if (play && !player.isPlaying()) {
-            player.start();
-        } else if (!play && player.isPlaying()) {
-            player.pause();
-        }
     }
 
     public void playOnce(String path) {
         audioHandler.post(() -> {
-            Integer sampleId = effectIds.get(path);
-            if (soundPool != null && !paused && loadedEffects.contains(sampleId)) {
-                soundPool.play(sampleId, 1f, 1f, 1, 0, 1f);
+            if (!enabled || released || paused || soundPool == null) {
+                return;
             }
+            soundPool.play(path);
         });
     }
 
     public void stop(String key) {
         audioHandler.post(() -> {
-            MediaPlayer player = loopPlayers.remove(key);
-            if (player != null) {
-                player.release();
+            if (!enabled || released || mediaPlayer == null) {
+                return;
             }
-            updateBackgroundMusic();
+            if (BOSS_BGM.equals(key)) {
+                mediaPlayer.stopBossBgm();
+            } else if (BGM.equals(key)) {
+                mediaPlayer.stopBgm();
+            }
         });
     }
 
     public void stopAllLoopMusic() {
-        audioHandler.post(this::releaseLoopPlayers);
-    }
-
-    private void releaseLoopPlayers() {
-        loopPlayers.values().forEach(MediaPlayer::release);
-        loopPlayers.clear();
+        audioHandler.post(() -> {
+            if (!enabled || released || mediaPlayer == null) {
+                return;
+            }
+            mediaPlayer.stopAll();
+        });
     }
 
     public void pause() {
         audioHandler.post(() -> {
+            if (!enabled || released) {
+                return;
+            }
             paused = true;
-            updateBackgroundMusic();
+            if (mediaPlayer != null) {
+                mediaPlayer.pause();
+            }
             if (soundPool != null) {
-                soundPool.autoPause();
+                soundPool.pause();
             }
         });
     }
 
     public void resume() {
         audioHandler.post(() -> {
+            if (!enabled || released) {
+                return;
+            }
             paused = false;
-            updateBackgroundMusic();
+            if (mediaPlayer != null) {
+                mediaPlayer.resume();
+            }
             if (soundPool != null) {
-                soundPool.autoResume();
+                soundPool.resume();
             }
         });
     }
 
     /** 由游戏 Activity 在主线程销毁时调用。 */
     public void release() {
+        released = true;
         audioHandler.removeCallbacksAndMessages(null);
-        releaseLoopPlayers();
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
         if (soundPool != null) {
-            soundPool.setOnLoadCompleteListener(null);
             soundPool.release();
             soundPool = null;
         }
-        loadedEffects.clear();
-        effectIds.clear();
     }
 }
