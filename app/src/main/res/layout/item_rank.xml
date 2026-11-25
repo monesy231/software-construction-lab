@@ -20,6 +20,13 @@
     <TextView
         android:id="@+id/rank_points"
         style="@style/RankPointsColumn"
+        android:layout_height="48dp"
+        android:autoSizeMaxTextSize="14sp"
+        android:autoSizeMinTextSize="8sp"
+        android:autoSizeStepGranularity="1sp"
+        android:autoSizeTextType="uniform"
+        android:gravity="end|center_vertical"
+        android:maxLines="1"
         android:textStyle="bold" />
 
     <TextView
