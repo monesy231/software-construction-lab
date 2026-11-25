@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ranking_page"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/menu_background"
+    android:orientation="vertical"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="8dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:accessibilityHeading="true"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:text="@string/ranking_title"
+        android:textColor="@color/rank_text"
+        android:textSize="26sp"
+        android:textStyle="bold" />
+
+    <RadioGroup
+        android:id="@+id/ranking_difficulty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/ranking_easy"
+            style="@style/RankDifficulty"
+            android:text="@string/ranking_easy" />
+
+        <RadioButton
+            android:id="@+id/ranking_normal"
+            style="@style/RankDifficulty"
+            android:text="@string/ranking_normal" />
+
+        <RadioButton
+            android:id="@+id/ranking_hard"
+            style="@style/RankDifficulty"
+            android:text="@string/ranking_hard" />
+    </RadioGroup>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/rank_header"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingVertical="8dp">
+
+        <TextView
+            style="@style/RankPlaceColumn"
+            android:accessibilityHeading="true"
+            android:text="@string/ranking_place" />
+
+        <TextView
+            style="@style/RankNameColumn"
+            android:accessibilityHeading="true"
+            android:text="@string/ranking_name" />
+
+        <TextView
+            style="@style/RankPointsColumn"
+            android:accessibilityHeading="true"
+            android:text="@string/ranking_points" />
+
+        <TextView
+            style="@style/RankTimeColumn"
+            android:accessibilityHeading="true"
+            android:text="@string/ranking_date" />
+
+        <Space
+            android:layout_width="@dimen/rank_delete_width"
+            android:layout_height="0dp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/lv_rank"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="@color/rank_divider"
+            android:dividerHeight="1dp"
+            android:listSelector="@android:color/transparent" />
+
+        <TextView
+            android:id="@+id/ranking_empty_state"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:accessibilityLiveRegion="polite"
+            android:gravity="center"
+            android:text="@string/ranking_loading"
+            android:textColor="@color/rank_muted"
+            android:textSize="15sp" />
+    </FrameLayout>
+
+    <Button
+        android:id="@+id/ranking_add"
+        style="@style/DifficultyButton"
+        android:layout_marginTop="8dp"
+        android:text="@string/ranking_add" />
+</LinearLayout>

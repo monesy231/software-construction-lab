@@ -2,7 +2,7 @@
 
 A course project that migrates an existing Java Windows aircraft shooting game to Android, then adds menus, audio, local score storage, cloud rankings, and two-player score competition.
 
-**Labs 1 through 3 are complete.** The start menu offers Easy, Normal, and Hard modes and an audio switch.
+**Labs 1 through 4 are complete.** The start menu offers three difficulty levels, an audio switch, and access to the local leaderboard.
 
 ## Project goals and roadmap
 
@@ -11,7 +11,7 @@ A course project that migrates an existing Java Windows aircraft shooting game t
 | Lab 1 | Migration analysis, project task book, and designs for two network features | Complete |
 | Lab 2 | Android project, images and game models, SurfaceView rendering, touch control, full game loop, four migration commits, and AI usage log | Complete |
 | Lab 3 | Difficulty menu, audio switch, game scenes, result dialog, music, and sound effects | Complete |
-| Lab 4 | Player-name entry, per-difficulty local rankings, persistent score records, and record management | Planned |
+| Lab 4 | Player-name entry, per-difficulty rankings, add and delete actions, and SQLite persistence | Complete |
 | Lab 5 | Cloud leaderboard service and client, two-player rooms, synchronized start, live score and life status, and result comparison | Planned |
 | Lab 6 | Integrate advanced enemy, supply, and shooting mechanics; improve extended gameplay and interaction | Planned |
 | Lab 7 | Integration testing, usage instructions, screenshots, design notes, and final report | Planned |
@@ -20,7 +20,7 @@ A course project that migrates an existing Java Windows aircraft shooting game t
 
 - Scrolling background, difficulty/score/life display, and touch-controlled movement with sprite-sized screen bounds.
 - Automatic shooting, enemy generation and movement, collision scoring, supply effects, and off-screen object cleanup.
-- A result dialog with the selected difficulty and final score, plus options to replay or return to the menu.
+- A result dialog shows the difficulty and final score. Save the score under a nickname to open the leaderboard for that difficulty, or replay or return to the menu without saving.
 - Gameplay and audio pause when the screen locks or the app moves to the background, then resume on return.
 - Window resizing adjusts the background and scales the positions of aircraft, bullets, and supplies while preserving score and health. A Boss sprite wider than the window stays centered.
 
@@ -28,7 +28,13 @@ A course project that migrates an existing Java Windows aircraft shooting game t
 
 Following the Lab 3 slides, `MyMediaPlayer` (`public class`) wraps regular and Boss looping tracks and pauses the regular track while Boss music plays, resuming from the paused position afterward. `MySoundPool` (`public class`) follows `Actvity_SoundPool.zip` with `AudioAttributes` (`USAGE_GAME`), 10 max concurrent streams, and a `soundPoolMap` sample registry to play hit, pickup, explosion, and game-over effects once loaded (with load-completion playback compensation for critical effects). `MusicManager` tracks explicit enabled/paused/released flags and dispatches requests in order on the main-thread `Handler`.
 
-To align with `SurfaceViewDemo` and Lab 2 guidelines, `ImageManager` caches the raw background bitmap and loaded difficulty to avoid redundant decoding/scaling, `AbstractFlyingObject` marks coordinates and validity `volatile`, and `Game` uses an anti-aliased `Paint`, `synchronized (mSurfaceHolder)` around canvas drawing, `WindowInsets` safe margins for the HUD, and game-over guards so resizing or resuming while ended repaints the final frame without restarting `GameThread` or music. Local rankings and networking follow in Labs 4 and 5.
+To align with `SurfaceViewDemo` and Lab 2 guidelines, `ImageManager` caches the raw background bitmap and loaded difficulty to avoid redundant decoding/scaling, `AbstractFlyingObject` marks coordinates and validity `volatile`, and `Game` uses an anti-aliased `Paint`, `synchronized (mSurfaceHolder)` around canvas drawing, `WindowInsets` safe margins for the HUD, and game-over guards so resizing or resuming while ended repaints the final frame without restarting `GameThread` or music.
+
+## Lab 4 local leaderboard
+
+- Open the local leaderboard from the menu to view Easy scores, then switch to Normal or Hard. Each list shows rank, nickname, score, and time, and highlights first place.
+- Add a record by entering a nickname and score, or confirm a deletion using the button on its row. Each difficulty sorts scores from highest to lowest, with newer records first when scores tie.
+- `ScoreBoardActivity` uses a `ListView` and custom `RankAdapter` to reuse row views. The adapter calls `notifyDataSetChanged()` after record changes. The file and SQLite implementations share the `ScoreDao` interface. `RankDbHelper` manages the private `rank.db` database that the app uses to retain scores across restarts. Storage operations run in the background.
 
 ## Planned network features
 

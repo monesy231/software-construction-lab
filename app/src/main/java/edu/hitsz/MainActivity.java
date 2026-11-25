@@ -39,6 +39,8 @@ public class MainActivity extends Activity {
         findViewById(R.id.start_easy).setOnClickListener(view -> startGame(GameDifficulty.EASY));
         findViewById(R.id.start_normal).setOnClickListener(view -> startGame(GameDifficulty.NORMAL));
         findViewById(R.id.start_hard).setOnClickListener(view -> startGame(GameDifficulty.HARD));
+        findViewById(R.id.open_rankings).setOnClickListener(view ->
+                startActivity(ScoreBoardActivity.newIntent(this, GameDifficulty.EASY)));
     }
 
     private void startGame(GameDifficulty difficulty) {

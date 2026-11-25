@@ -65,6 +65,12 @@
                 android:layout_marginTop="8dp"
                 android:text="@string/difficulty_hard" />
 
+            <Button
+                android:id="@+id/open_rankings"
+                style="@style/DifficultyButton"
+                android:layout_marginTop="8dp"
+                android:text="@string/ranking_title" />
+
             <Switch
                 android:id="@+id/audio_switch"
                 android:layout_width="match_parent"

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="rank_text">#F1F7FF</color>
+    <color name="rank_muted">#C7DAF2</color>
+    <color name="rank_background">#10253B</color>
+    <color name="rank_header">#204B72</color>
+    <color name="rank_divider">#355775</color>
+    <color name="rank_top_background">#453519</color>
+    <color name="rank_top_text">#FFDA84</color>
+    <color name="rank_delete">#FFADAB</color>
+    <dimen name="rank_delete_width">48dp</dimen>
+
+    <style name="RankDifficulty" parent="android:style/Widget.Material.CompoundButton.RadioButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:textColor">@color/rank_text</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="RankColumn">
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/rank_text</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="RankPlaceColumn" parent="RankColumn">
+        <item name="android:layout_width">42dp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="RankNameColumn" parent="RankColumn">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:paddingEnd">4dp</item>
+    </style>
+
+    <style name="RankPointsColumn" parent="RankColumn">
+        <item name="android:layout_width">82dp</item>
+        <item name="android:gravity">end</item>
+        <item name="android:paddingEnd">6dp</item>
+    </style>
+
+    <style name="RankTimeColumn" parent="RankColumn">
+        <item name="android:layout_width">86dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+</resources>

@@ -8,8 +8,8 @@ android {
         applicationId 'edu.hitsz'
         minSdk 30
         targetSdk 37
-        versionCode 2
-        versionName '1.1-lab3'
+        versionCode 3
+        versionName '1.2-lab4'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     compileOptions {

@@ -13,5 +13,6 @@
             android:name=".GameActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
             android:exported="false" />
+        <activity android:name=".ScoreBoardActivity" android:exported="false" />
     </application>
 </manifest>

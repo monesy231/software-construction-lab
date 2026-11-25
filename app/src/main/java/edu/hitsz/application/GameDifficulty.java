@@ -26,4 +26,15 @@ public enum GameDifficulty {
     public String getBackgroundImageName() {
         return backgroundImageName;
     }
+
+    public static GameDifficulty fromName(String name) {
+        if (name != null) {
+            for (GameDifficulty difficulty : values()) {
+                if (difficulty.name().equals(name)) {
+                    return difficulty;
+                }
+            }
+        }
+        return EASY;
+    }
 }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp"
+    android:paddingVertical="8dp">
+
+    <EditText
+        android:id="@+id/score_entry_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/ranking_name"
+        android:importantForAutofill="no"
+        android:inputType="textPersonName|textCapWords"
+        android:maxLength="24"
+        android:singleLine="true" />
+
+    <EditText
+        android:id="@+id/score_entry_score"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/ranking_points"
+        android:importantForAutofill="no"
+        android:inputType="number"
+        android:maxLength="10"
+        android:singleLine="true"
+        android:visibility="gone" />
+</LinearLayout>
